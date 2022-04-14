@@ -10,11 +10,31 @@ interface Transaction {
   createdAt: string;
 }
 
+// maneiras de declarar uma nova transação sem os atributos que são criados automáticos
+// pode ser uma nova interface
+// interface TransactionInput {
+//   title: string;
+//   type: string;
+//   category: string;
+//   amount: number;
+// }
+// pode ser pelo Omit que omite os atributos x, y e z de um tipo que já existe
+type TransactionInput = Omit<Transaction, 'id' | 'createdAt'>;
+// pode ser pelo Pick que seleciona os atributos a, b e c de um tipo que já existe
+// type TransactionInput = Pick<Transaction, 'title' | 'type' | 'category' | 'amount'>;
+
 interface TransactionProviderProps {
   children: ReactNode;
 }
 
-export const TransactionsContext = createContext<Transaction[]>([]);
+interface TransactionContextData {
+  transactions: Transaction[];
+  createTransaction: (transaction: TransactionInput) => void;
+}
+
+export const TransactionsContext = createContext<TransactionContextData>(
+  {} as TransactionContextData
+);
 
 export function TransactionsProvider({ children }: TransactionProviderProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -24,8 +44,13 @@ export function TransactionsProvider({ children }: TransactionProviderProps) {
       .get('transactions')
       .then(response => setTransactions(response.data.transactions));
   }, []);
+
+  function createTransaction(transaction: TransactionInput) {
+    api.post('/transaction', transaction);
+  }
+
   return (
-    <TransactionsContext.Provider value={transactions}>
+    <TransactionsContext.Provider value={{ transactions, createTransaction }}>
       {children}
     </TransactionsContext.Provider>
   );
